@@ -1,0 +1,2 @@
+# hazmer
+simple text mining
