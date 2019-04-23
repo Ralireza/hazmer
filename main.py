@@ -1,69 +1,63 @@
 from __future__ import unicode_literals
 import pandas as pd
 from hazm import *
-from apyori import apriori
+# from apyori import apriori
+from efficient_apriori import apriori
 
-# tagger = POSTagger(model='resources/postagger.model')
-# s = tagger.tag(word_tokenize('ما بسیار کتاب می‌خوانیم.ما بسیار کتاب می‌خوانیم.ما بسیار کتاب می‌خوانیم.ما بسیار کتاب می‌خوانیم'))
-# print(s)
 
-vocab = set()
-doc_vocab = []
-number_of_terms = 0
-number_of_docs = 0
-class_dictionary = {}
-cls_index = 0
-doc_clss_index = []
-count_of_that_class = []
-class_name = []
-f = open("n.txt", "r")
-# t=f.readline()
-# fl =f.readlines()
-# for x in fl:
-#     print(x)
+stemmer = Stemmer()
+lemmatizer = Lemmatizer()
 
-mylen = 0
-for line in f.readlines():
-    normalizer = Normalizer()
-    t = normalizer.normalize(line)
 
-    # print(sent_tokenize(line))
-    # print(word_tokenize(line))
-    mylen += len(word_tokenize(line))
-    print(len(word_tokenize(line)))
-    print(mylen)
-f.close()
-# h = open("n.txt", "w+")
+def divide_by_sentence():
+    f = open("n.txt", "r")
+    tagger = POSTagger(model='resources/postagger.model')
+    sentence_list = []
+    sentence_tag_list = []
+    for line in f.readlines():
+        normalizer = Normalizer()
+        normalized = normalizer.normalize(line)
+        word_token = word_tokenize(normalized)
+        word_tag = tagger.tag(word_token)
+        split_index = 0
+        # fld sentence by ariving to V tag
+        for i in range(len(word_tag)):
+            if word_tag[i][1] == 'V':
+                sentence_list.append(word_token[split_index:(i + 1)])
+                sentence_tag_list.append(word_tag[split_index:(i + 1)])
+                split_index = i + 1
+    f.close()
+    return sentence_list, sentence_tag_list
 
-# with open('HAM-Train-Test/HAM-Train.txt', 'r', encoding="utf8") as infile:
-#     for line in infile:
-#         number_of_docs += 1
-#         cls, sep, text = line.partition('@@@@@@@@@@')
-#         if number_of_docs < 20:
-#             print(text)
-#             h.write(text)
+
+sentence, tags = divide_by_sentence()
+
+tags_list = []
+token_set = set()
+
+for sent in tags:
+    tmp_list = []
+
+    for token in sent:
+        tmp_list.append(list(token))
+        for item in tmp_list:
+
+            # if item[1]=='N':
+            #     item[0]=stemmer.stem(item[0])
+            if item[1] == 'V':
+                item[0] = lemmatizer.lemmatize(item[0])
+            token_set.add(item[0])
+
+    tags_list.append(tmp_list)
+
+f = [["h", "o", "o", "o", "o"], ["o", "h"]]
+# assosiation_rule = apriori(sentence, min_support=0.007)
+# r=list(assosiation_rule)
+
+# for i in r :
 #
-#         # assigning class index for each document
-#         if (class_dictionary.get(cls)) is None:
-#             class_dictionary[cls] = cls_index
-#             tmp = cls_index
-#             cls_index += 1
-#             count_of_that_class.append(1)
-#             class_name.append(cls)
-#
-#         else:
-#             tmp = class_dictionary[cls]
-#             count_of_that_class[tmp] += 1
-#         doc_clss_index.append(tmp)
-#         tokens = word_tokenize(text)
-#         tmp_set = set()
-#         number_of_terms += len(tokens)
-#         for word in tokens:
-#             vocab.add(word)
-#             tmp_set.add(word)
-#         doc_vocab.append(tmp_set)
-
-# print("vocab size:", len(vocab))
-# print("number of terms (all tokens):", number_of_terms)
-# print("number of docs:", number_of_docs)
-# print("number of classes:", cls_index)
+#     print(i)
+item,rules = apriori(sentence, min_support=0.007)
+rules_rhs = filter(lambda rule: len(rule.lhs) == 2 and len(rule.rhs) == 1, rules)
+for rule in sorted(rules_rhs, key=lambda rule: rule.lift):
+  print(rule) # Prints the rule and its confidence, support, lift, ...
