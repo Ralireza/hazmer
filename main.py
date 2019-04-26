@@ -3,7 +3,7 @@ import pandas as pd
 from hazm import *
 # from apyori import apriori
 from efficient_apriori import apriori
-
+from IPython.display import display, HTML
 
 stemmer = Stemmer()
 lemmatizer = Lemmatizer()
@@ -20,7 +20,7 @@ def divide_by_sentence():
         word_token = word_tokenize(normalized)
         word_tag = tagger.tag(word_token)
         split_index = 0
-        # fld sentence by ariving to V tag
+        # fold sentence by ariving to V tag
         for i in range(len(word_tag)):
             if word_tag[i][1] == 'V':
                 sentence_list.append(word_token[split_index:(i + 1)])
@@ -28,6 +28,10 @@ def divide_by_sentence():
                 split_index = i + 1
     f.close()
     return sentence_list, sentence_tag_list
+
+
+def show_tags(tags):
+    print(tags)
 
 
 sentence, tags = divide_by_sentence()
@@ -50,14 +54,18 @@ for sent in tags:
 
     tags_list.append(tmp_list)
 
-f = [["h", "o", "o", "o", "o"], ["o", "h"]]
-# assosiation_rule = apriori(sentence, min_support=0.007)
-# r=list(assosiation_rule)
-
-# for i in r :
-#
-#     print(i)
-item,rules = apriori(sentence, min_support=0.007)
+data = {'word': [], 'support': [], 'confidence': [], 'lift': [], 'conv': []}
+# print(tags)
+item,rules = apriori(sentence, min_support=0.01)
 rules_rhs = filter(lambda rule: len(rule.lhs) == 2 and len(rule.rhs) == 1, rules)
 for rule in sorted(rules_rhs, key=lambda rule: rule.lift):
-  print(rule) # Prints the rule and its confidence, support, lift, ...
+  # print(rule)  # Prints the rule and its confidence, support, lift, ...
+  data['word'].append(rule.lhs)
+  data['support'].append(rule.support)
+  data['confidence'].append(rule.confidence)
+  data['lift'].append(rule.lift)
+  data['conv'].append(rule.conviction)
+
+data_frame = pd.DataFrame(data)
+print(data_frame)
+data_frame.style
