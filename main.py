@@ -1,9 +1,7 @@
 from __future__ import unicode_literals
-import pandas as pd
 from hazm import *
-# from apyori import apriori
 from efficient_apriori import apriori
-from IPython.display import display, HTML
+from prettytable import PrettyTable
 
 stemmer = Stemmer()
 lemmatizer = Lemmatizer()
@@ -54,18 +52,16 @@ for sent in tags:
 
     tags_list.append(tmp_list)
 
-data = {'word': [], 'support': [], 'confidence': [], 'lift': [], 'conv': []}
-# print(tags)
-item,rules = apriori(sentence, min_support=0.01)
-rules_rhs = filter(lambda rule: len(rule.lhs) == 2 and len(rule.rhs) == 1, rules)
-for rule in sorted(rules_rhs, key=lambda rule: rule.lift):
-  # print(rule)  # Prints the rule and its confidence, support, lift, ...
-  data['word'].append(rule.lhs)
-  data['support'].append(rule.support)
-  data['confidence'].append(rule.confidence)
-  data['lift'].append(rule.lift)
-  data['conv'].append(rule.conviction)
 
-data_frame = pd.DataFrame(data)
-print(data_frame)
-data_frame.style
+def show_apriori_table():
+    table = PrettyTable()
+    table.field_names = ['conviction', 'lift', 'confidence', 'support', 'word']
+
+    item, rules = apriori(sentence, min_support=0.01)
+    rules_rhs = filter(lambda rule: len(rule.lhs) == 2 and len(rule.rhs) == 1, rules)
+    for rule in sorted(rules_rhs, key=lambda rule: rule.lift):
+        table.add_row([rule.lhs, rule.support, rule.confidence, rule.lift, rule.conviction])
+
+    print(table)
+
+show_apriori_table()
