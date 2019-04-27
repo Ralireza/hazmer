@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from hazm import *
 from efficient_apriori import apriori
 from prettytable import PrettyTable
+from scipy.stats import chisquare
 
 stemmer = Stemmer()
 lemmatizer = Lemmatizer()
@@ -53,15 +54,21 @@ for sent in tags:
     tags_list.append(tmp_list)
 
 
-def show_apriori_table():
+def show_apriori_table(min_support):
     table = PrettyTable()
-    table.field_names = ['conviction', 'lift', 'confidence', 'support', 'word']
+    table.field_names = ['lift', 'confidence', 'support', 'word']
 
-    item, rules = apriori(sentence, min_support=0.01)
+    item, rules = apriori(sentence, min_support=min_support)
     rules_rhs = filter(lambda rule: len(rule.lhs) == 2 and len(rule.rhs) == 1, rules)
     for rule in sorted(rules_rhs, key=lambda rule: rule.lift):
-        table.add_row([rule.lhs, rule.support, rule.confidence, rule.lift, rule.conviction])
+        table.add_row([rule.lhs, rule.support, rule.confidence, rule.lift])
 
     print(table)
 
-show_apriori_table()
+
+def chi_square():
+    return chisquare(sentence)
+
+
+# show_apriori_table(0.01)
+print(chi_square())
