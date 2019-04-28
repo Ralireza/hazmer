@@ -2,10 +2,7 @@ from __future__ import unicode_literals
 from hazm import *
 from efficient_apriori import apriori
 from prettytable import PrettyTable
-from scipy.stats import chisquare
-
-stemmer = Stemmer()
-lemmatizer = Lemmatizer()
+from scipy import stats
 
 
 def divide_by_sentence():
@@ -30,28 +27,35 @@ def divide_by_sentence():
 
 
 def show_tags(tags):
-    print(tags)
+    for sentence in tags:
+        print(sentence)
 
 
-sentence, tags = divide_by_sentence()
+def cleaner(tags):
+    stemmer = Stemmer()
+    lemmatizer = Lemmatizer()
+    uniq_tags_list = []
+    token_set = set()
+    for sent in tags:
+        tmp_list = []
 
-tags_list = []
-token_set = set()
+        for token in sent:
+            tmp_list.append(list(token))
+            for item in tmp_list:
 
-for sent in tags:
-    tmp_list = []
+                if item[1] == 'N':
+                    item[0] = stemmer.stem(item[0])
+                if item[1] == 'V':
+                    item[0] = lemmatizer.lemmatize(item[0])
+                token_set.add(item[0])
 
-    for token in sent:
-        tmp_list.append(list(token))
-        for item in tmp_list:
+        uniq_tags_list.append(tmp_list)
 
-            # if item[1]=='N':
-            #     item[0]=stemmer.stem(item[0])
-            if item[1] == 'V':
-                item[0] = lemmatizer.lemmatize(item[0])
-            token_set.add(item[0])
-
-    tags_list.append(tmp_list)
+    uniq_token = []
+    for sentence in uniq_tags_list:
+        for words in sentence:
+            uniq_token.append(words[0])
+    return uniq_token, uniq_tags_list
 
 
 def show_apriori_table(min_support):
@@ -63,12 +67,27 @@ def show_apriori_table(min_support):
     for rule in sorted(rules_rhs, key=lambda rule: rule.lift):
         table.add_row([rule.lhs, rule.support, rule.confidence, rule.lift])
 
-    print(table)
+
+def show_chi_square(uniq_token, uniq_tags_list):
+    table = []
+    for word in uniq_token:
+        freq_list = []
+        for sentence in uniq_tags_list:
+            frequncy_in_sentence = 0
+            for words in sentence:
+                if word == words[0]:
+                    frequncy_in_sentence += 1
+
+            freq_list.append(frequncy_in_sentence)
+        table.append(freq_list)
+
+    chi2_stat, p_val, dof, ex = stats.chi2_contingency(table)
+    print('chi_square:  ', chi2_stat)
+    print('p_value:  ', p_val)
+    print('degree of freedome:  ', dof)
 
 
-def chi_square():
-    return chisquare(sentence)
-
-
-# show_apriori_table(0.01)
-print(chi_square())
+sentence, tags = divide_by_sentence()
+show_tags(tags)
+uniq_token, uniq_tags_list = cleaner(tags)
+show_chi_square(uniq_token, uniq_tags_list)
