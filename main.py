@@ -3,6 +3,7 @@ from hazm import *
 from efficient_apriori import apriori
 from prettytable import PrettyTable
 from scipy import stats
+import sys
 
 
 def divide_by_sentence():
@@ -88,6 +89,11 @@ def show_chi_square(uniq_token, uniq_tags_list):
 
 
 sentence, tags = divide_by_sentence()
-show_tags(tags)
-uniq_token, uniq_tags_list = cleaner(tags)
-show_chi_square(uniq_token, uniq_tags_list)
+
+if sys.argv == 'tags':
+    show_tags(tags)
+elif sys.argv == 'apriori':
+    show_apriori_table(sys.argv[2])
+elif sys.argv == 'chi2':
+    uniq_token, uniq_tags_list = cleaner(tags)
+    show_chi_square(uniq_token, uniq_tags_list)
