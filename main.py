@@ -4,6 +4,8 @@ from efficient_apriori import apriori
 from prettytable import PrettyTable
 from scipy import stats
 import sys
+from scipy import spatial
+import numpy as np
 
 
 def divide_by_sentence():
@@ -59,7 +61,7 @@ def cleaner(tags):
     return uniq_token, uniq_tags_list
 
 
-def show_apriori_table(min_support):
+def show_apriori_table(min_support, sentence):
     table = PrettyTable()
     table.field_names = ['lift', 'confidence', 'support', 'word']
 
@@ -67,9 +69,10 @@ def show_apriori_table(min_support):
     rules_rhs = filter(lambda rule: len(rule.lhs) == 2 and len(rule.rhs) == 1, rules)
     for rule in sorted(rules_rhs, key=lambda rule: rule.lift):
         table.add_row([rule.lhs, rule.support, rule.confidence, rule.lift])
+    print(table)
 
 
-def show_chi_square(uniq_token, uniq_tags_list):
+def compute_freq(uniq_token, uniq_tags_list):
     table = []
     for word in uniq_token:
         freq_list = []
@@ -81,19 +84,47 @@ def show_chi_square(uniq_token, uniq_tags_list):
 
             freq_list.append(frequncy_in_sentence)
         table.append(freq_list)
+    return table
 
+
+def show_chi_square(table):
     chi2_stat, p_val, dof, ex = stats.chi2_contingency(table)
     print('chi_square:  ', chi2_stat)
     print('p_value:  ', p_val)
     print('degree of freedome:  ', dof)
 
 
-sentence, tags = divide_by_sentence()
+def cosine_similarity(vec1, vec2):
+    return 1 - spatial.distance.cosine(vec1, vec2)
 
-if sys.argv == 'tags':
+
+def show_cosine_table(freq_table):
+    similarity_table = list()
+    stable = PrettyTable()
+    stable.field_names = [num for num in np.arange(1, len(freq_table)+1)]
+    for vector in range(len(freq_table) - 6250):
+        tmp = list()
+        for vector2 in freq_table:
+            tmp.append(cosine_similarity(freq_table[vector], vector2))
+        stable.add_row(tmp)
+
+        similarity_table.append(tmp)
+
+    print(stable)
+
+
+sent, tags = divide_by_sentence()
+uniq_token, uniq_tags_list = cleaner(tags)
+table = compute_freq(uniq_token, uniq_tags_list)
+
+if sys.argv[1] == 'tags':
     show_tags(tags)
-elif sys.argv == 'apriori':
-    show_apriori_table(sys.argv[2])
-elif sys.argv == 'chi2':
-    uniq_token, uniq_tags_list = cleaner(tags)
-    show_chi_square(uniq_token, uniq_tags_list)
+elif sys.argv[1] == 'apriori':
+    show_apriori_table(float(sys.argv[2]), sent)
+elif sys.argv[1] == 'chi2':
+    print('loading . . . ')
+    show_chi_square(table)
+elif sys.argv[1] == 'cosine':
+    show_cosine_table(table)
+else:
+    print('ERROR')
